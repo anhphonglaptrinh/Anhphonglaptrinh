@@ -86,7 +86,7 @@ ButtonSai.MouseButton1Click:Connect(function()
 		AngryLabel.TextScaled = true
 
 		wait(2)
-		game.Players.LocalPlayer:Kick("đây là cái kết cho những người nói phong đẹp trai là sai🖕")
+		game.Players.LocalPlayer:Kick("tao là đẹp trai nhất🖕")
 	end
 end)
 

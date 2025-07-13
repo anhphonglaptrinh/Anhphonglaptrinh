@@ -80,7 +80,7 @@ task.delay(1.5, function()
 	weld.Part1 = hrp
 	weld.Parent = core
 
-	hrp.Anchored = false -- thả nhân vật hoạt động bình thường
+	hrp.Anchored = false -- nhân vật di chuyển bình thường
 end)
 
 -- Hướng theo nhân vật

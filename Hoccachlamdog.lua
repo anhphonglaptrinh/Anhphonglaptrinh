@@ -1,66 +1,65 @@
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
 local player = Players.LocalPlayer
-local char = player.Character or player.CharacterAdded:Wait()
-local humanoid = char:WaitForChild("Humanoid")
+local character = player.Character or player.CharacterAdded:Wait()
 
--- ⚠️ Kiểm tra Rig
-if humanoid.RigType ~= Enum.HumanoidRigType.R15 then
-	warn("Chỉ hoạt động với nhân vật R15!")
-	return
+-- Ẩn nhân vật thật
+for _, v in ipairs(character:GetChildren()) do
+	if v:IsA("BasePart") then
+		v.Transparency = 1
+		v.CanCollide = false
+	elseif v:IsA("Accessory") or v:IsA("Hat") then
+		v:Destroy()
+	end
 end
 
--- 📦 1. TẠO TOOL SỦA
-local tool = Instance.new("Tool")
-tool.Name = "Sủa!"
-tool.RequiresHandle = false
-tool.CanBeDropped = false
+-- Tạo mô hình R6 bò
+local model = Instance.new("Model", workspace)
+model.Name = "CrawlR6"
 
--- Âm thanh sủa
-local barkSound = Instance.new("Sound")
-barkSound.Name = "BarkSound"
-barkSound.SoundId = "rbxassetid://138087015" -- tiếng sủa
-barkSound.Volume = 1
-barkSound.Parent = tool
+-- Hàm tạo part
+local function makePart(name, size, color, pos)
+	local part = Instance.new("Part")
+	part.Name = name
+	part.Size = size
+	part.Position = pos
+	part.Anchored = true
+	part.Color = color
+	part.CanCollide = false
+	part.Material = Enum.Material.SmoothPlastic
+	part.TopSurface = Enum.SurfaceType.Smooth
+	part.BottomSurface = Enum.SurfaceType.Smooth
+	part.Parent = model
+	return part
+end
 
--- Khi dùng tool
-tool.Activated:Connect(function()
-	if barkSound.IsPlaying then
-		barkSound:Stop()
-	end
-	barkSound:Play()
+-- Thân và đầu
+local rootPos = character:WaitForChild("HumanoidRootPart").Position
+local torso = makePart("Torso", Vector3.new(2, 1, 1), Color3.fromRGB(170, 120, 80), rootPos)
+local head = makePart("Head", Vector3.new(2, 1, 1), Color3.fromRGB(200, 160, 120), torso.Position + Vector3.new(0, 0.8, -1.2))
+
+-- Tay và chân
+local function limb(name, offset)
+	return makePart(name, Vector3.new(1, 1, 1), torso.Color, torso.Position + offset)
+end
+
+local limbs = {
+	limb("LeftArm", Vector3.new(-1.2, -0.5, -1)),
+	limb("RightArm", Vector3.new(1.2, -0.5, -1)),
+	limb("LeftLeg", Vector3.new(-0.8, -0.5, 1.2)),
+	limb("RightLeg", Vector3.new(0.8, -0.5, 1.2)),
+}
+
+-- Cập nhật vị trí mô hình theo nhân vật
+RunService.RenderStepped:Connect(function()
+	local hrp = character:FindFirstChild("HumanoidRootPart")
+	if not hrp then return end
+	local cf = CFrame.new(hrp.Position) * CFrame.Angles(0, hrp.Orientation.Y * math.pi/180, 0)
+	torso.CFrame = cf
+	head.CFrame = cf * CFrame.new(0, 0.8, -1.2)
+	limbs[1].CFrame = cf * CFrame.new(-1.2, -0.5, -1)
+	limbs[2].CFrame = cf * CFrame.new(1.2, -0.5, -1)
+	limbs[3].CFrame = cf * CFrame.new(-0.8, -0.5, 1.2)
+	limbs[4].CFrame = cf * CFrame.new(0.8, -0.5, 1.2)
 end)
-
--- Cho Tool vào balo
-tool.Parent = player:WaitForChild("Backpack")
-
--- 🐕 2. TƯ THẾ BÒ BẰNG 4 CHÂN
-local function applyCrawlPose()
-	local joints = {
-		["UpperTorso"] = Vector3.new(0, 90, 0),
-		["LowerTorso"] = Vector3.new(0, 30, 0),
-		["RightUpperLeg"] = Vector3.new(-90, 0, 0),
-		["LeftUpperLeg"] = Vector3.new(-90, 0, 0),
-		["RightLowerLeg"] = Vector3.new(90, 0, 0),
-		["LeftLowerLeg"] = Vector3.new(90, 0, 0),
-		["RightUpperArm"] = Vector3.new(-120, 0, 0),
-		["LeftUpperArm"] = Vector3.new(-120, 0, 0),
-		["RightLowerArm"] = Vector3.new(-30, 0, 0),
-		["LeftLowerArm"] = Vector3.new(-30, 0, 0),
-	}
-
-	for name, rotation in pairs(joints) do
-		local part = char:FindFirstChild(name)
-		if part and part:FindFirstChildWhichIsA("Motor6D") then
-			local joint = part:FindFirstChildWhichIsA("Motor6D")
-			joint.Transform = CFrame.Angles(
-				math.rad(rotation.X),
-				math.rad(rotation.Y),
-				math.rad(rotation.Z)
-			)
-		end
-	end
-end
-
--- Gập tư thế và hạ người
-applyCrawlPose()
-humanoid.HipHeight = 0.5 -- sát đất
